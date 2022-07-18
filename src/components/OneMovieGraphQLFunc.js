@@ -1,12 +1,12 @@
 import React,  {useEffect, useState,  Fragment} from 'react'
 import { useParams} from 'react-router-dom';
 
-function OneMovieFunc(props){
-
+function OneMovieGraphQLFun(props){
+   
     const { id } = useParams();
 
     const [movie,setMovie]=useState({});
-    const [error,setError]=useState(null);
+    
     
     
 /*useEffect(()=>{
@@ -17,18 +17,48 @@ function OneMovieFunc(props){
     })
 },[id]);*/
 useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/v1/movie/` + id)
-    .then((response) => {
-    if (response.status !== 200) {
-        setError("Invalid response: ", response.status);
-    } else {
-        setError(null);
-    }
-        return response.json();
+    setMovie({
+        id: id ,
+        title: "Some movie",
+        runtime: 150,
+        year:"",
+        description:"",
+        release_date:"",
+        rating:"",
+        mpaa_rating:"",
+        poster:"",
     })
-    .then((json) => {
-        setMovie(json.movie);
-    });
+    const payload = `
+        {
+            movie(id: ${ id }) {
+                id
+                title
+                runtime
+                year
+                description
+                release_date
+                rating
+                mpaa_rating
+                poster
+            }
+        }
+        `
+
+    const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const requestOptions = {
+            method: "POST",
+            body: payload,
+            headers: myHeaders,
+        }
+
+        fetch("http://localhost:4000/v1/graphql", requestOptions)
+        .then((response) => response.json())
+        .then((data) => {
+            setMovie(data.data.movie);
+            console.log("After search")
+        });
 }, [id]);
 
 if (movie.genres) {
@@ -36,12 +66,14 @@ if (movie.genres) {
 } else {
     movie.genres = [];
 }
-if (error !== null) {
-    return <div>Error: {error.message}</div>
-} else {
+
     return (
+        
         <Fragment>
             <h2>Movie: {movie.title} ({movie.year})</h2>
+            <div>
+                <img src={`http://image.tmdb.org/t/p/w200${movie.poster}`} alt="poster"/>
+            </div>
 
             <div className="float-start">
                 <small>Rating: {movie.mpaa_rating}</small>
@@ -79,6 +111,6 @@ if (error !== null) {
     }
 
 
-}
 
-export default OneMovieFunc;
+
+export default OneMovieGraphQLFun;
